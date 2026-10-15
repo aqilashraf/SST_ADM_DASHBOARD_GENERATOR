@@ -566,24 +566,25 @@ with tab_company:
 with tab_vio:
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown(f"##### Top {top_n} jenis pelanggaran syarat")
-        vv = f.groupby(COL_VIOLATION, as_index=False)[COL_AMOUNT].sum().nlargest(top_n, COL_AMOUNT)
-        show(hbar(vv, COL_VIOLATION, PALETTE[3]))
+        st.markdown("##### Pembahagian pelanggaran syarat")
+        vd = f.groupby(COL_VIOLATION)[COL_AMOUNT].sum()
+        vd = vd[vd > 0].sort_values(ascending=False).reset_index()
+        if vd.empty:
+            st.info("No positive amounts to display.")
+        else:
+            fig = px.pie(vd, names=COL_VIOLATION, values=COL_AMOUNT, hole=0.55,
+                         color_discrete_sequence=PALETTE)
+            fig.update_traces(
+                textinfo="percent", textposition="inside",
+                hovertemplate="%{label}<br>RM %{value:,.2f}<br>%{percent}<extra></extra>",
+            )
+            style(fig, 420)
+            fig.update_layout(legend=dict(orientation="h", y=-0.12, x=0))
+            show(fig)
     with c2:
         st.markdown(f"##### Top {top_n} kod hasil")
         cc = f.groupby(COL_CODE, as_index=False)[COL_AMOUNT].sum().nlargest(top_n, COL_AMOUNT)
         show(hbar(cc, COL_CODE, PALETTE[5]))
-
-    st.markdown("##### Jenis pelanggaran → kod hasil (treemap)")
-    tm = f.groupby([COL_VIOLATION, COL_CODE], as_index=False)[COL_AMOUNT].sum()
-    tm = tm[tm[COL_AMOUNT] > 0]
-    if tm.empty:
-        st.info("No positive amounts to display.")
-    else:
-        fig = px.treemap(tm, path=[COL_VIOLATION, COL_CODE], values=COL_AMOUNT,
-                         color_discrete_sequence=PALETTE)
-        fig.update_traces(hovertemplate="%{label}<br>RM %{value:,.2f}<extra></extra>")
-        show(style(fig, 460, legend=False))
 
     st.markdown(f"##### Pelanggaran mengikut {period_name}")
     if dated.empty:
