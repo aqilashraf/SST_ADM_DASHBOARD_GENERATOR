@@ -569,9 +569,9 @@ with tab_vio:
             show(fig)
     with c2:
         st.markdown(f"##### Top {top_n} kod hasil")
-               cc = (f.groupby(COL_CODE, as_index=False)
-        .agg(**{COL_AMOUNT: (COL_AMOUNT, "sum"), "REKOD": (COL_AMOUNT, "size")})
-        .nlargest(top_n, COL_AMOUNT))
+        cc = (f.groupby(COL_CODE, as_index=False)
+              .agg(**{COL_AMOUNT: (COL_AMOUNT, "sum"), "REKOD": (COL_AMOUNT, "size")})
+              .nlargest(top_n, COL_AMOUNT))
         show(hbar(cc, COL_CODE, PALETTE[5], count_col="REKOD"))
 
     st.markdown(f"##### Pelanggaran mengikut {period_name}")
