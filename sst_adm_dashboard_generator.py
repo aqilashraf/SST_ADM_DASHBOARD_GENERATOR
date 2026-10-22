@@ -332,7 +332,7 @@ with st.sidebar:
         "Time axis built from", [COL_DATE, COL_MONTH],
         help="TARIKH BAYARAN by default. Choose BULAN if that column defines your reporting month.",
     )
-    top_n = st.slider("Top N items in charts", 5, 30, 10)
+    top_n = st.slider("Top N items in charts", 1, 10, 10)
 
 # ============================================================
 # Prepare data
