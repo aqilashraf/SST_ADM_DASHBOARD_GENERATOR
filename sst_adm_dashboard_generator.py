@@ -409,11 +409,10 @@ if bad_dates or bad_amounts:
     )
 
 total = f[COL_AMOUNT].sum()
-k = st.columns(5)
+k = st.columns(4)
 kpi(k[0], "Jumlah Cukai", rm(total))
 kpi(k[1], "Bilangan Rekod", f"{len(f):,}")
 kpi(k[2], "Bilangan Syarikat", f"{f[COL_COMPANY].nunique():,}")
-kpi(k[3], "Purata / Rekod", rm(total / len(f)))
 if len(trend) >= 1:
     last = trend.iloc[-1]
     delta = None
@@ -422,9 +421,9 @@ if len(trend) >= 1:
         prev = trend.iloc[-2]
         delta = (last["JUMLAH"] - prev["JUMLAH"]) / abs(prev["JUMLAH"]) * 100
         sub = f"vs {prev['LABEL']}"
-    kpi(k[4], f"{period_name.capitalize()} terkini · {last['LABEL']}", rm(last["JUMLAH"]), delta, sub)
+    kpi(k[3], f"{period_name.capitalize()} terkini · {last['LABEL']}", rm(last["JUMLAH"]), delta, sub)
 else:
-    kpi(k[4], f"{period_name.capitalize()} terkini", "—")
+    kpi(k[3], f"{period_name.capitalize()} terkini", "—")
 
 st.markdown("")
 
