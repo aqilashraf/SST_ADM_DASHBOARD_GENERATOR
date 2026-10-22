@@ -242,16 +242,27 @@ def trend_chart(t, monthly, color=PRIMARY):
     return style(fig, 380, legend=False)
 
 
-def hbar(d, label, color=PRIMARY, height=420):
+def hbar(d, label, color=PRIMARY, height=420, count_col=None):
     d = d.sort_values(COL_AMOUNT)
     full = d[label].astype(str)
     lbl = full.where(full.str.len() <= 40, full.str.slice(0, 38) + "…")
+    if count_col:
+        text = [f"{short(a)} · {int(c):,} rekod" for a, c in zip(d[COL_AMOUNT], d[count_col])]
+        hover = [f"{n}<br>RM {a:,.2f}<br>{int(c):,} rekod"
+                 for n, a, c in zip(full, d[COL_AMOUNT], d[count_col])]
+    else:
+        text = [short(a) for a in d[COL_AMOUNT]]
+        hover = [f"{n}<br>RM {a:,.2f}" for n, a in zip(full, d[COL_AMOUNT])]
     fig = go.Figure(go.Bar(
-        x=d[COL_AMOUNT], y=lbl, customdata=full, orientation="h", marker_color=color,
-        text=d[COL_AMOUNT].map(short), textposition="outside", cliponaxis=False,
-        hovertemplate="%{customdata}<br>RM %{x:,.2f}<extra></extra>",
+        x=d[COL_AMOUNT], y=lbl, orientation="h", marker_color=color,
+        text=text, textposition="outside", cliponaxis=False,
+        hovertext=hover, hovertemplate="%{hovertext}<extra></extra>",
     ))
     fig.update_yaxes(automargin=True)
+    top = d[COL_AMOUNT].max()
+    if count_col and top > 0:
+        # extra room on the right so the longer labels are not cut off
+        fig.update_xaxes(range=[min(0, d[COL_AMOUNT].min() * 1.1), top * 1.4])
     return style(fig, height, legend=False)
 
 
@@ -558,8 +569,10 @@ with tab_vio:
             show(fig)
     with c2:
         st.markdown(f"##### Top {top_n} kod hasil")
-        cc = f.groupby(COL_CODE, as_index=False)[COL_AMOUNT].sum().nlargest(top_n, COL_AMOUNT)
-        show(hbar(cc, COL_CODE, PALETTE[5]))
+               cc = (f.groupby(COL_CODE, as_index=False)
+              .agg(**{COL_AMOUNT: (COL_AMOUNT, "sum"), "REKOD": (COL_AMOUNT, "size")})
+              .nlargest(top_n, COL_AMOUNT))
+        show(hbar(cc, COL_CODE, PALETTE[5], count_col="REKOD"))
 
     st.markdown(f"##### Pelanggaran mengikut {period_name}")
     if dated.empty:
