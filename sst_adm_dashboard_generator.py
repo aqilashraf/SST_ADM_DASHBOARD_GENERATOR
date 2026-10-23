@@ -28,20 +28,6 @@ REQUIRED = [COL_MONTH, COL_COMPANY, COL_VIOLATION, COL_CODE, COL_AMOUNT, COL_DAT
 SUPPORTED = ["csv", "tsv", "txt", "xlsx", "xlsm", "xls", "ods", "json"]
 EXCEL_ENGINES = {"xlsx": "openpyxl", "xlsm": "openpyxl", "xls": "xlrd", "ods": "odf"}
 
-MONTHS = {
-    "JANUARI": 1, "JAN": 1, "JANUARY": 1,
-    "FEBRUARI": 2, "FEB": 2, "FEBRUARY": 2,
-    "MAC": 3, "MAR": 3, "MARCH": 3,
-    "APRIL": 4, "APR": 4,
-    "MEI": 5, "MAY": 5,
-    "JUN": 6, "JUNE": 6,
-    "JULAI": 7, "JUL": 7, "JULY": 7,
-    "OGOS": 8, "OGO": 8, "AUG": 8, "AUGUST": 8,
-    "SEPTEMBER": 9, "SEP": 9, "SEPT": 9,
-    "OKTOBER": 10, "OKT": 10, "OCT": 10, "OCTOBER": 10,
-    "NOVEMBER": 11, "NOV": 11,
-    "DISEMBER": 12, "DIS": 12, "DEC": 12, "DECEMBER": 12,
-}
 MONTH_LABELS = ["Jan", "Feb", "Mac", "Apr", "Mei", "Jun", "Jul", "Ogo", "Sep", "Okt", "Nov", "Dis"]
 
 PALETTE = ["#4F46E5", "#06B6D4", "#10B981", "#F59E0B", "#EF4444",
@@ -173,33 +159,10 @@ def clean_amount(s):
     return pd.to_numeric(cleaned, errors="coerce")
 
 
-def month_number(v):
-    if pd.isna(v):
-        return None
-    t = str(v).strip().upper()
-    if t in MONTHS:
-        return MONTHS[t]
-    try:
-        n = int(float(t))
-        if 1 <= n <= 12:
-            return n
-    except ValueError:
-        pass
-    return None
-
-
-def build_period_date(df, basis):
-    """First day of the month for each row, from TARIKH BAYARAN or BULAN."""
+def build_period_date(df):
+    """First day of the month of each payment date (TARIKH BAYARAN)."""
     pay = pd.to_datetime(df[COL_DATE], dayfirst=True, errors="coerce")
-    if basis == COL_DATE:
-        return pay.dt.to_period("M").dt.to_timestamp()
-    months = pd.to_numeric(df[COL_MONTH].map(month_number), errors="coerce")
-    combined = pd.to_datetime(
-        pd.DataFrame({"year": pay.dt.year, "month": months, "day": 1}), errors="coerce"
-    )
-    direct = pd.to_datetime(df[COL_MONTH], dayfirst=True, errors="coerce")
-    direct = direct.where(months.isna()).dt.to_period("M").dt.to_timestamp()
-    return combined.fillna(direct)
+    return pay.dt.to_period("M").dt.to_timestamp()
 
 
 def aggregate(d, monthly):
@@ -339,10 +302,6 @@ with st.sidebar:
     st.markdown("---")
     view = st.radio("2 · Dashboard view", ["Bulanan", "Tahunan"], horizontal=True)
     monthly = view == "Bulanan"
-    basis = st.selectbox(
-        "Time axis built from", [COL_DATE, COL_MONTH],
-        help="TARIKH BAYARAN by default. Choose BULAN if that column defines your reporting month.",
-    )
     top_n = st.slider("Top N items in charts", 1, 10, 10)
 
 # ============================================================
@@ -355,7 +314,7 @@ for c in (COL_COMPANY, COL_VIOLATION):
 df[COL_CODE] = (df[COL_CODE].fillna("(Kosong)").astype(str).str.strip()
                 .str.replace(r"\.0$", "", regex=True))
 df[COL_AMOUNT] = clean_amount(df[COL_AMOUNT])
-df["PERIOD"] = build_period_date(df, basis)
+df["PERIOD"] = build_period_date(df)
 df["TAHUN"] = df["PERIOD"].dt.year
 df["BULAN_NO"] = df["PERIOD"].dt.month
 df["TEMPOH"] = df["PERIOD"].dt.strftime("%Y-%m")
